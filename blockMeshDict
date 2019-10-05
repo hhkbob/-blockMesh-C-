@@ -1,0 +1,196 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  5                                     |
+|   \\  /    A nd           | Web:      www.OpenFOAM.org                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+
+FoamFile  
+{
+	version	2.0;
+	class	dictionary;
+	format	ascii;
+	location	"system";
+	object	blockMeshDict;
+}
+
+convertToMeters	1;
+
+vertices #codeStream
+{ 
+    codeInclude
+    #{
+        #include "pointField.H"
+    #};
+    
+    code
+    #{
+         float D = 0.04, ret = 0.006, r = D/2;
+         float H = 2*D;
+         float L = 10*D, Ret = 3*D;
+         float pi = 3.1415926;
+         pointField points(16);
+         points[0] = point(ret,ret,0);
+         points[1] = point(-ret,ret,0);
+         points[2] = point(-ret,-ret,0);
+         points[3] = point(ret,-ret,0);
+         points[4] = point(r*cos(pi/4),-r*sin(pi/4),0);
+         points[5] = point(r*cos(pi/4),r*sin(pi/4),0);
+         points[6] = point(-r*cos(pi/4),r*sin(pi/4),0);
+         points[7] = point(-r*cos(pi/4),-r*sin(pi/4),0);
+         points[8] = point(-Ret, -Ret, 0);
+         points[9] = point(Ret, -Ret, 0);
+         points[10] = point(Ret, Ret, 0);
+         points[11] = point(-Ret, Ret,0);
+         points[12] = point(-L*cos(pi/4),L*sin(pi/4),0);
+         points[13] = point(-L*cos(pi/4),-L*sin(pi/4),0);
+         points[14] = point(L*cos(pi/4), -L*sin(pi/4),0);
+         points[15] = point(L*cos(pi/4), L*sin(pi/4),0);
+ 
+         // Duplicate z points
+        label sz = points.size();
+        points.setSize(2*sz);
+        for (label i = 0; i < sz; i++)
+        {
+            const point& pt = points[i];
+            points[i+sz] = point(pt.x(), pt.y(), -H);
+        }
+
+        os  << points;
+    #};
+};
+
+// nodes distributions
+NH 80;  //vertical nodes
+N1 20;  // nozzle-radial
+N2 100;
+N3 80;
+N0 30;  //the nozzle exit
+
+// simpleGrading
+S1 ((0.5 0.5 3) (0.5 0.5 0.3));
+S2 6; //6
+S3 ((0.5 0.5 10) (0.5 0.5 0.1)); //vertical nodes
+
+blocks
+(
+   hex (0 3 2 1 16 19 18 17) ($N0 $N0 $NH) simpleGrading (1 1 $S3)  //1
+   hex (5 0 1 6 21 16 17 22) ($N1 $N0 $NH) simpleGrading ($S1 1 $S3) //2
+   hex (3 0 5 4 19 16 21 20) ($N0 $N1 $NH) simpleGrading (1 $S1 $S3) //3
+   hex (3 4 7 2 19 20 23 18) ($N1 $N0 $NH) simpleGrading ($S1 1 $S3) //4
+   hex (1 2 7 6 17 18 23 22) ($N0 $N1 $NH) simpleGrading (1 $S1 $S3) //5
+   hex (5 6 11 10 21 22 27 26) ($N0 $N2 $NH) simpleGrading (1 $S2 $S3) //6
+   hex (4 5 10 9 20 21 26 25) ($N0 $N2 $NH) simpleGrading (1 $S2 $S3) //7
+   hex (4 9 8 7 20 25 24 23) ($N2 $N0 $NH) simpleGrading ($S2 1 $S3) //8
+   hex (7 8 11 6 23 24 27 22) ($N2 $N0 $NH) simpleGrading ($S2 1 $S3) //9
+   hex (10 11 12 15 26 27 28 31) ($N0 $N3 $NH) simpleGrading (1 1 $S3) //10
+   hex (9 10 15 14 25 26 31 30) ($N0 $N3 $NH) simpleGrading (1 1 $S3) //11
+   hex (8 9 14 13 24 25 30 29) ($N0 $N3 $NH) simpleGrading (1 1 $S3) //12
+   hex (12 11 8 13 28 27 24 29) ($N3 $N0 $NH) simpleGrading (1 1 $S3) //13
+);
+
+edges
+(
+   arc 4 5 (0.02 0 0)
+   arc 5 6 (0 0.02 0)
+   arc 6 7 (-0.02 0 0)
+   arc 7 4 (0 -0.02 0)
+   arc 20 21 (0.02 0 -0.08)
+   arc 21 22 (0 0.02 -0.08)
+   arc 22 23 (-0.02 0 -0.08)
+   arc 23 20 (0 -0.02 -0.08)
+   arc 14 15 (0.4 0 0)
+   arc 15 12 (0 0.4 0)
+   arc 12 13 (-0.4 0 0)
+   arc 13 14 (0 -0.4 0)
+   arc 30 31 (0.4 0 -0.08)
+   arc 31 28 (0 0.4 -0.08)
+   arc 28 29 (-0.4 0 -0.08)
+   arc 29 30 (0 -0.4 -0.08)
+   arc 8 11  (-0.16971 0 0)
+   arc 8 9   (0 -0.16971 0)
+   arc 9 10  (0.16971 0 0)
+   arc 10 11 (0 0.16971 0)
+   arc 24 27 (-0.16971 0 -0.08)
+   arc 24 25 (0 -0.16971 -0.08)
+   arc 25 26 (0.16971 0 -0.08)
+   arc 26 27 (0 0.16971 -0.08)
+);
+
+boundary
+(
+    IN 
+    {
+        type patch;
+        faces
+        (
+            (0 1 2 3)
+            (1 6 5 0)
+            (3 4 5 0)
+            (1 6 7 2)
+            (2 7 4 3)
+        );
+    }
+    CONFINED
+    {
+       type patch;
+       faces
+       (
+           (5 10 11 6)
+           (10 15 12 11)
+           (4 9 10 5)
+           (9 14 15 10)
+           (9 4 7 8)
+           (14 9 8 13)
+           (7 6 11 8)
+           (11 12 13 8)
+       );
+    }
+    PLANE
+    {
+         type wall;
+         faces
+         (
+            (16 17 18 19)
+            (16 21 22 17)
+            (19 20 21 16)
+            (17 22 23 18)
+            (18 23 20 19)
+
+           (21 26 27 22)
+           (26 31 28 27)
+           (20 25 26 21)
+           (25 30 31 26)
+           (25 20 23 24)
+           (30 25 24 29)
+           (23 22 27 24)
+           (27 28 29 24)
+         );
+    }
+    OUT
+    {
+        type patch;
+        faces
+        (
+           (15 14 30 31)
+           (12 15 31 28)
+           (12 13 29 28)
+           (13 14 30 29) 
+        );
+    }
+);
+
+mergePatchPairs
+(
+);
+
+// ************************************************************************* //
+
+
+
+
+
+
+
+
